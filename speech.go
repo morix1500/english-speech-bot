@@ -37,7 +37,6 @@ func GetSpeech(text string, output_path string) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed get aws polly.")
 	}
-	os.Remove(output_path)
 
 	wf, err := os.OpenFile(output_path, os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {

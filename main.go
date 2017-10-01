@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/base64"
+	"fmt"
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -20,8 +22,6 @@ type UserIdList struct {
 
 const (
 	image_path         string = "logo.png"
-	speech_output_path string = "speech.mp3"
-	video_output_path  string = "video.mp4"
 )
 
 const (
@@ -44,7 +44,12 @@ func loadConfig() (string, error) {
 	return strings.Join(u.Ids, ","), nil
 }
 
-func uploadTweet(a *anaconda.TwitterApi, video string, text string) error {
+func uploadTweet(a *anaconda.TwitterApi, video string, speech string, text string) error {
+	defer func() {
+		os.Remove(speech)
+		os.Remove(video)
+	}()
+
 	fp, err := ioutil.ReadFile(video)
 	if err != nil {
 		return errors.Wrap(err, "Faild video open.")
@@ -87,7 +92,7 @@ func uploadTweet(a *anaconda.TwitterApi, video string, text string) error {
 	return nil
 }
 
-func createVideo(tweet string) error {
+func createVideo(tweet, speech_output_path, video_output_path string) error {
 	err := GetSpeech(tweet, speech_output_path)
 	if err != nil {
 		return err
@@ -127,7 +132,11 @@ func main() {
 					tweet = strings.Split(tweet, "\n")[0]
 					logger.Info("Tweet: " + tweet)
 
-					err := createVideo(tweet)
+					base := fmt.Sprintf("%x", md5.Sum([]byte(tweet)))
+					speech_output_path := base + ".mp3"
+					video_output_path := base + ".mp4"
+
+					err := createVideo(tweet, speech_output_path, video_output_path)
 					if err != nil {
 						logger.Fatal(err)
 						os.Exit(ExitCodeErr)
@@ -139,7 +148,7 @@ func main() {
 						os.Exit(ExitCodeErr)
 					}
 
-					err = uploadTweet(api, video_output_path, tweet)
+					err = uploadTweet(api, video_output_path, speech_output_path, tweet)
 					if err != nil {
 						logger.Fatal(err)
 						os.Exit(ExitCodeErr)

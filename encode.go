@@ -2,12 +2,10 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"os"
 	"os/exec"
 )
 
 func EncodeVideo(image, speech, output_path string) error {
-	os.Remove(output_path)
 	cmd_args := []string{
 		"-loop", "1",
 		"-i", image,
