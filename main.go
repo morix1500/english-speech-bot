@@ -24,11 +24,6 @@ const (
 	image_path         string = "logo.png"
 )
 
-const (
-	ExitCodeOK = iota
-	ExitCodeErr
-)
-
 func loadConfig() (string, error) {
 	fp, err := ioutil.ReadFile(os.Getenv("USER_LIST_PATH"))
 	if err != nil {
@@ -110,7 +105,7 @@ func main() {
 	user_ids, err := loadConfig()
 	if err != nil {
 		logger.Fatal(err)
-		os.Exit(ExitCodeErr)
+		os.Exit(1)
 	}
 
 	v := url.Values{}
@@ -127,7 +122,7 @@ func main() {
 		case stream := <-stream.C:
 			switch status := stream.(type) {
 			case anaconda.Tweet:
-				if status.RetweetedStatus == nil {
+				if status.RetweetedStatus == nil && status.InReplyToStatusID == 0 {
 					tweet := status.Text
 					tweet = strings.Split(tweet, "\n")[0]
 					logger.Info("Tweet: " + tweet)
@@ -139,23 +134,19 @@ func main() {
 					err := createVideo(tweet, speech_output_path, video_output_path)
 					if err != nil {
 						logger.Fatal(err)
-						os.Exit(ExitCodeErr)
 					}
 
 					_, err = api.Retweet(status.Id, true)
 					if err != nil {
 						logger.Fatal(err)
-						os.Exit(ExitCodeErr)
 					}
 
 					err = uploadTweet(api, video_output_path, speech_output_path, tweet)
 					if err != nil {
 						logger.Fatal(err)
-						os.Exit(ExitCodeErr)
 					}
 				}
 			}
 		}
 	}
-	os.Exit(ExitCodeOK)
 }
