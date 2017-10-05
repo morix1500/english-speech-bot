@@ -122,7 +122,7 @@ func main() {
 		case stream := <-stream.C:
 			switch status := stream.(type) {
 			case anaconda.Tweet:
-				if status.RetweetedStatus == nil && status.InReplyToStatusID == 0 {
+				if status.RetweetedStatus == nil && status.InReplyToStatusID == 0 && status.QuotedStatusID == 0 {
 					tweet := status.Text
 					tweet = strings.Split(tweet, "\n")[0]
 					logger.Info("Tweet: " + tweet)
@@ -133,17 +133,17 @@ func main() {
 
 					err := createVideo(tweet, speech_output_path, video_output_path)
 					if err != nil {
-						logger.Fatal(err)
+						logger.Error(err)
 					}
 
 					_, err = api.Retweet(status.Id, true)
 					if err != nil {
-						logger.Fatal(err)
+						logger.Error(err)
 					}
 
 					err = uploadTweet(api, video_output_path, speech_output_path, tweet)
 					if err != nil {
-						logger.Fatal(err)
+						logger.Error(err)
 					}
 				}
 			}
